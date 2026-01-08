@@ -29,7 +29,13 @@ class User extends AbstractUser{
             password_hash($this->password, PASSWORD_DEFAULT), 
             $this->role]);
     }
-    
+
+    public function login($email, $password)
+    {
+        return parent::login($email, $password);
+    }
+
+
     public  function getTickets(){
         $stmt = $this->db->prepare("
         SELECT t.* , m.lieu , m.date_match  , m.duration , c.nom , e.nom, 

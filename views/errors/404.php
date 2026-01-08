@@ -1,4 +1,3 @@
-<!-- views/errors/404.php - Page d'erreur 404 -->
 <?php
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(dirname(__FILE__)));

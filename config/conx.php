@@ -1,26 +1,26 @@
 <?php
 
 class Database {
-    private static $instance = null; // Singleton instance we did  it static to be accessible without instantiating the class and null to check if an instance already exists
+    private static $instance = null;
     private $pdo;
 
-    private function __construct($dsn, $username ,  $password){
+    private function __construct($dsn, $username, $password){
         try{
-            $this->pdo = new PDO($dsn , $username, $password);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
-
-        }catch (PDOException $e) {
+            $this->pdo = new PDO($dsn, $username, $password);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
             error_log("Database connection error: " . $e->getMessage());
-            throw new Exception("Database connection failed.");
+            throw new Exception("Database connection failed: " . $e->getMessage());
         }
     }
 
-    public static function getIstance($dsn ,$username, $password){
-        if(self::$instance === null){
-            $dsn = 'mysql:host=localhost;dbname=buymatch;charset=utf8mb4';
+    public static function getInstance($dsn = null, $username = null, $password = null){
+        if (self::$instance === null) {
+            $dsn = $dsn ?? 'mysql:host=localhost;dbname=buymatch;charset=utf8mb4';
             $username = $username ?? 'root';
             $password = $password ?? '';
-            self::$instance = new self($dsn, $username, $password); // new self() calls the private constructor
+            self::$instance = new self($dsn, $username, $password);
         }
         return self::$instance;
     }

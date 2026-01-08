@@ -30,5 +30,19 @@ class User extends AbstractUser{
             $this->role]);
     }
     
-   
+    public  function getTickets(){
+        $stmt = $this->db->prepare("
+        SELECT t.* , m.lieu , m.date_match  , m.duration , c.nom , e.nom, 
+        c.prix , e.logo, t.place_number FROM tickets t 
+        JOIN matchs m ON t.match_id = m.id 
+        JOIN categories c ON t.category_id = c.id 
+        JOIN equipes e ON m.equipe = e.id WHERE t.user_id = ? 
+        ORDER BY m.date_match DESC
+        ");
+
+        $stmt->execute([$this->id]);
+        return $stmt->fetchAll();
+    }
+
+  
 }

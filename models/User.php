@@ -44,5 +44,42 @@ class User extends AbstractUser{
         return $stmt->fetchAll();
     }
 
-  
+    public function buyTicket($matchId, $categoryId, $placeNumber, $quantité){
+       $stmt = $this->db->prepare("SELECT COUNT(*) From tickets WHERE user_id =  ? And match_id = ?");
+       $stmt->execute([$this->id, $matchId]);
+       if ($stmt->fetchColumn() > 4) {
+           throw new Exception("you can't buy more than 4 billets .");
+       }
+
+       $stmt = $this->db->prepare("SELECT * FROM tickets 
+       WHERE match_id = ? AND category_id = ? AND place_number = ?");
+
+       $stmt->execute([$matchId, $categoryId, $placeNumber]);
+       if ($stmt->fetch()) {
+           throw new Exception("This place is already taken.");
+       }
+
+       $ticket = new Ticket();
+       return $ticket->create($this->id, $matchId, $categoryId, $placeNumber);
+    }
+
+
+    public function addReview($matchId , $rating, $comment){
+       $review = new Review(); 
+       return $review->create($this->id, $matchId, $rating , $comment);
+    }
+
+    public function getHistory(){
+        $stmt = $this->db->prepare("
+        SELECT r.*, m.lieu, m.date_match, e.nom AS equipe_nom 
+        FROM reviews r 
+        JOIN matchs m ON r.match_id = m.id 
+        JOIN equipes e ON m.equipe = e.id 
+        WHERE r.user_id = ? 
+        ORDER BY m.date_match DESC
+        ");
+
+        $stmt->execute([$this->id]);
+        return $stmt->fetchAll();
+    }
 }

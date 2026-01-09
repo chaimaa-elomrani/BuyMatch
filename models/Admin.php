@@ -34,5 +34,26 @@ class Admin extends AbstractUser {
         ]);
     }
 
+    public function getPendingMatches(){
+        $stmt = $this->db->prepare(
+            "SELECT m.*, 
+                   t1.nom AS team1_name, t2.nom AS team2_name,
+                   u.nom AS org_nom, u.prenom AS org_prenom
+            FROM matchs m
+            JOIN equipes t1 ON m.team1_id = t1.id
+            JOIN equipes t2 ON m.team2_id = t2.id
+            JOIN users u ON m.organizer_id = u.id
+            WHERE m.statut = 'pending'
+            ORDER BY m.date_match
+            ");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function getAllMatches(){
+        $stmt = $this->db->prepare("CALL getAllMatches()");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 
 }

@@ -1,4 +1,5 @@
 <?php
+require_once 'C:\laragon\www\BuyMatch\config\conx.php';
 abstract class AbstractUser {
 
     protected $id;

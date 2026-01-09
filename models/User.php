@@ -1,5 +1,7 @@
 <?php
-
+require_once 'AbstractUser.php';
+require_once 'Review.php';
+require_once 'Tickets.php';
 class User extends AbstractUser{
 
     public function __construct($fullname = null, $email = null, $role = 'user'){
@@ -36,19 +38,32 @@ class User extends AbstractUser{
     }
 
 
-    public  function getTickets(){
-        $stmt = $this->db->prepare("
-        SELECT t.* , m.lieu , m.date_match  , m.duration , c.nom , e.nom, 
-        c.prix , e.logo, t.place_number FROM tickets t 
+    public function getTickets(){
+    $stmt = $this->db->prepare("
+        SELECT 
+            t.*, 
+            m.lieu, 
+            m.date_match, 
+            m.duration, 
+            c.nom AS category_name, 
+            c.prix,
+            t1.nom AS team1_name,
+            t2.nom AS team2_name,
+            t1.logo AS team1_logo,
+            t2.logo AS team2_logo,
+            t.place_number 
+        FROM tickets t 
         JOIN matchs m ON t.match_id = m.id 
         JOIN categories c ON t.category_id = c.id 
-        JOIN equipes e ON m.equipe = e.id WHERE t.user_id = ? 
+        JOIN equipes t1 ON m.team1_id = t1.id
+        JOIN equipes t2 ON m.team2_id = t2.id
+        WHERE t.user_id = ?
         ORDER BY m.date_match DESC
-        ");
+    ");
 
-        $stmt->execute([$this->id]);
-        return $stmt->fetchAll();
-    }
+    $stmt->execute([$this->id]);
+    return $stmt->fetchAll();
+}
 
     public function buyTicket($matchId, $categoryId, $placeNumber, $quantité){
        $stmt = $this->db->prepare("SELECT COUNT(*) From tickets WHERE user_id =  ? And match_id = ?");
@@ -66,7 +81,8 @@ class User extends AbstractUser{
        }
 
        $ticket = new Tickets();
-       return $ticket->create($this->id, $matchId, $categoryId, $placeNumber);
+       $qrCode = bin2hex(random_bytes(16)); // Generate a unique QR code
+       return $ticket->create($this->id, $matchId, $categoryId, $placeNumber, $qrCode);
     }
 
 

@@ -12,25 +12,34 @@ class organizer extends AbstractUser{
         }
     }   
 
-    public function register(){
-        $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute([$this->email]);
-        if ($stmt->fetch()) {
-            return false;
-        }
-         $stmt = $this->db->prepare("
-            INSERT INTO users (email, password, fullname, role) 
-            VALUES (?, ?, ?, 'organizer')
-        ");
-
-        return $stmt->execute([
-            $this->email,
-            $this->fullname,
-            $this->password,
-            $this->role
-        ]);
+    // Exemple pour Organizer.php
+public function register()
+{
+    $stmt = $this->db->prepare("SELECT id FROM users WHERE email = :email");
+    
+    $stmt->execute([':email' => $this->email]);
+    if ($stmt->fetch()) {
+        throw new Exception("Email déjà utilisé");
     }
 
+    $stmt = $this->db->prepare("
+        INSERT INTO users (nom, prenom, email, password, role) 
+        VALUES (?, ?, ?, ?, 'organizer')
+    ");
+
+    $success = $stmt->execute([
+        $this->nom ?? 'Organisateur',   
+        $this->prenom ?? '',
+        $this->email,
+        password_hash($this->password, PASSWORD_DEFAULT)
+    ]);
+
+    if ($success) {
+        $this->id = $this->db->lastInsertId();
+        return true;
+    }
+    return false;
+}
 
    public function createMatch($team1Id, $team2Id, $dateMatch, $lieu, $capacity, $organizerId)
 {

@@ -3,23 +3,47 @@ require_once 'C:\laragon\www\BuyMatch\config\conx.php';
 abstract class AbstractUser {
 
     protected $id;
-    protected $fullname;
+    protected $nom;
+    protected $prenom;
     protected $password;
     protected $email;
     protected $role ;
+    protected $status;
     protected $db;
 
-    public function __construct(){
+
+    public function __construct(
+        ?int $id = null,
+        ?string $nom = null,
+        ?string $prenom = null,
+        ?string $email = null,
+        ?string $password = null,
+        string $role = 'user',
+        string $status = 'active'
+    ) {
         $this->db = Database::getInstance()->getConnection();
+
+        $this->id       = $id;
+        $this->nom      = $nom ?? '';
+        $this->prenom   = $prenom ?? '';
+        $this->email    = $email ?? '';
+        $this->role     = $role;
+        $this->status   = $status;
+
+        // Si mot de passe fourni, on le hash immédiatement (utile pour register)
+        if ($password !== null && $password !== '') {
+            $this->password = password_hash($password, PASSWORD_DEFAULT);
+        }
     }
 
     public function getId(){
         return $this->id;
     }
-
+    
     public function getFullname(){
-        return $this->fullname;
+        return trim($this->nom . ' ' . $this->prenom);
     }
+
     public function getEmail(){
         return $this->email;
     }
@@ -27,9 +51,7 @@ abstract class AbstractUser {
         return $this->role;
     }
 
-    public function setFullname($fullname){
-        $this->fullname = $fullname;
-    }
+  
     public function setEmail($email){
         $this->email = $email;
     }
@@ -64,7 +86,8 @@ abstract class AbstractUser {
 
     if ($user) {
         $this->id = $user['id'];
-        $this->fullname = trim($user['prenom'] . ' ' . $user['nom']); // ou l'inverse selon affichage
+        $this->nom = $user['nom'];
+        $this->prenom = $user['prenom'];
         $this->email = $user['email'];
         $this->role = $user['role'];
         $this->password = $user['password']; // optionnel

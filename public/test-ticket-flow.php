@@ -12,7 +12,7 @@ $user = new User(1); // Pass user ID to constructor
 
 // 3. Acheter un billet (exemple avec données valides de ta BD)
 try {
-    $ticketId = $user->buyTicket(
+    $ticketId = $user->create(
         matchId: 1,         // un match existant
         categoryId: 1,      // une catégorie existante pour ce match
         placeNumber: 'TEST-A1',

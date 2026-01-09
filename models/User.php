@@ -26,7 +26,8 @@ class User extends AbstractUser{
         VALUES (?, ?, ?, ?, ?)");
 
         return $stmt->execute([
-            $this->fullname, 
+            $this->nom,
+            $this->prenom, 
             $this->email, 
             password_hash($this->password, PASSWORD_DEFAULT), 
             $this->role]);

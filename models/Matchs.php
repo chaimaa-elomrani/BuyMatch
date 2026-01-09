@@ -1,20 +1,6 @@
 <?php
 require_once BASE_PATH . '/config/conx.php';
 class Matchs{
-
-    //CREATE TABLE matchs (
-//     id INT AUTO_INCREMENT PRIMARY KEY,
-//     equipe INT NOT NULL,
-//     date_match DATETIME NOT NULL,
-//     lieu VARCHAR(150) NOT NULL,
-//     duration INT DEFAULT 90,
-//     capacity INT NOT NULL CHECK (capacity <= 2000),
-//     statut ENUM('pending', 'valid', 'rejected', 'published') DEFAULT 'pending',
-//     organizer_id INT NOT NULL,
-//     FOREIGN KEY (equipe) REFERENCES equipes(id) ON DELETE RESTRICT,
-//     FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
-// );
-
     private $id;
     private $equipe; 
     private $date_match;

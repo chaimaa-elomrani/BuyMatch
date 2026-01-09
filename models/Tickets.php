@@ -78,9 +78,56 @@ class Tickets
             $this->category_id = $data['category_id'];
             $this->place_number = $data['place_number'];
             $this->qr_code = $data['qr_code'];
-            
+
         }
         return $data;// return the data for further use if needed , we did the condition before to avoid errors
 
+    }
+
+
+    public function generatePDF()
+    {
+        // Implement PDF generation logic here using a library like TCPDF or FPDF
+        $data = $this->loadById($this->id);
+        if (!$data) {
+            throw new Exception("Ticket not found.");
+        }
+        $dompdf = new \Dompdf\Dompdf();
+         $html = "
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .ticket { border: 2px solid #000; padding: 20px; width: 600px; margin: 0 auto; }
+                    .header { text-align: center; background: #007bff; color: white; padding: 15px; }
+                    .info { margin: 20px 0; }
+                    .qr-code { text-align: center; margin: 20px 0; }
+                </style>
+            </head>
+            <body>
+                <div class='ticket'>
+                    <div class='header'>
+                        <h1>BILLET DE MATCH</h1>
+                    </div>
+                    <div class='info'>
+                        <h2>{$data['equipe_domicile']} vs {$data['equipe_exterieur']}</h2>
+                        <p><strong>Date:</strong> " . date('d/m/Y H:i', strtotime($data['date_match'])) . "</p>
+                        <p><strong>Lieu:</strong> {$data['lieu']}</p>
+                        <p><strong>Catégorie:</strong> {$data['categorie_nom']}</p>
+                        <p><strong>Place:</strong> {$data['numero_place']}</p>
+                        <p><strong>Prix:</strong> {$data['prix']} DH</p>
+                    </div>
+                    <div class='qr-code'>
+                        <p><strong>Code QR:</strong> {$data['qr_code']}</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        ";
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        return $dompdf->output();
     }
 }

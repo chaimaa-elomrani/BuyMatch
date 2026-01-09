@@ -27,7 +27,7 @@ switch ($route) {
         $controller = new AdminController();
         $controller->$action();
         break;
-
+    
 
     default:
         echo "<h1>Bienvenue sur BuyMatch</h1>";

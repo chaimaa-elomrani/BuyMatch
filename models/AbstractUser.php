@@ -51,13 +51,25 @@ abstract class AbstractUser {
         return $this->role;
     }
 
+    public function setNom($nom){
+        $this->nom = $nom;
+    }
+    public function setPrenom($prenom){
+        $this->prenom = $prenom;
+    }
   
     public function setEmail($email){
         $this->email = $email;
     }
+
+    public function setPassword($password){
+        $this->password = password_hash($password, PASSWORD_DEFAULT);
+    }
+    
     public function setRole($role){
         $this->role = $role;
     }
+
     
     abstract public function register();
     public function login($email, $password){

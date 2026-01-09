@@ -65,7 +65,7 @@ class User extends AbstractUser{
            throw new Exception("This place is already taken.");
        }
 
-       $ticket = new Ticket();
+       $ticket = new Tickets();
        return $ticket->create($this->id, $matchId, $categoryId, $placeNumber);
     }
 

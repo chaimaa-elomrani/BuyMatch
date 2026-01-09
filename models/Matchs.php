@@ -1,5 +1,5 @@
 <?php
-require_once BASE_PATH . '/config/conx.php';
+require_once __DIR__ . '/../config/conx.php';
 class Matchs{
     private $id;
     private $equipe; 
@@ -20,20 +20,24 @@ class Matchs{
         return $this->organizer_id;
     }
 
-    public function createMatch($equipe, $lieu, $date_match, $duration, $organizer_id){
-        $stmt = $this->db->prepare("
-            INSERT INTO matchs (equipe, lieu, date_match, duration, capacity, organizer_id) 
-            VALUES (?, ?, ?, ?, 2000, ?)
-        ");
-
-        return $stmt->execute([
-            $equipe,
-            $lieu,
-            $date_match,
-            $duration,
-            $organizer_id
-        ]);
+   public function createMatch($team1Id, $team2Id, $dateMatch, $lieu, $capacity, $organizerId)
+{
+    if ($capacity > 2000) {
+        throw new Exception("Capacity cannot exceed 2000");
     }
+
+    $stmt = $this->db->prepare("
+        INSERT INTO matchs (team1_id, team2_id, date_match, lieu, capacity, organizer_id, statut)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending')
+    ");
+
+    $result = $stmt->execute([$team1Id, $team2Id, $dateMatch, $lieu, $capacity, $organizerId]);
+
+    if ($result) {
+        return $this->db->lastInsertId();
+    }
+    return false;
+}
 
 
     public function getAllMatches(){

@@ -53,8 +53,11 @@ class Review {
     }
 
     public function save(){
-        $stmt = $this->db->prepare("INSERT INTO reviews (user_id, product_id, rating, comment, created_at) VALUES (:user_id, :product_id, :rating, :comment, NOW())");
-        $stmt->bindParam(':user_id', $this->userId);
+        $stmt = $this->db->prepare("
+            INSERT INTO reviews (user_id, product_id, rating, comment, created_at) 
+            VALUES (:user_id, :product_id, :rating, :comment, NOW())
+        ");
+        $stmt->bindParam(':user_id', $this->userId); // bindparam ; it's like linking the variable to the placeholder in the sql query
         $stmt->bindParam(':product_id', $this->productId);
         $stmt->bindParam(':rating', $this->rating);
         $stmt->bindParam(':comment', $this->comment);

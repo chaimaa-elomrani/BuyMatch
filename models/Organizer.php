@@ -1,6 +1,6 @@
 <?php
-require_once 'models/AbstractUser.php';
-require_once 'models/Matchs.php';
+require_once 'AbstractUser.php';
+require_once 'Matchs.php';
 
 class organizer extends AbstractUser{
    public function __construct($id = null) {
@@ -31,10 +31,11 @@ class organizer extends AbstractUser{
     }
 
 
-    public function createMatch($equipe, $lieu, $date_match, $duration){
-        $match = new Matchs();
-        return $match->createMatch($equipe, $lieu, $date_match, $duration, $this->id);
-    }
+   public function createMatch($team1Id, $team2Id, $dateMatch, $lieu, $capacity, $organizerId)
+{
+    $match = new Matchs();
+    return $match->createMatch($team1Id, $team2Id, $dateMatch, $lieu, $capacity, $organizerId);
+}
 
 
     public function getMatches(){

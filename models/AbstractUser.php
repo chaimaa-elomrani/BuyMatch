@@ -56,20 +56,22 @@ abstract class AbstractUser {
     }
 
 
-    protected function loadById($id){
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = :id");
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        $user = $stmt->fetch();
+  protected function loadById($id){
+    $stmt = $this->db->prepare("SELECT id, nom, prenom, email, role, password FROM users WHERE id = :id");
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user) {
-            $this->id = $user['id'];
-            $this->fullname = $user['nom'] . ' ' . $user['prenom'];
-            $this->email = $user['email'];
-            $this->role = $user['role'];
-        }
-        return $user !== false;
+    if ($user) {
+        $this->id = $user['id'];
+        $this->fullname = trim($user['prenom'] . ' ' . $user['nom']); // ou l'inverse selon affichage
+        $this->email = $user['email'];
+        $this->role = $user['role'];
+        $this->password = $user['password']; // optionnel
+        return true;
     }
+    return false;
+}
     
     
 

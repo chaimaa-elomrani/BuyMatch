@@ -1,6 +1,7 @@
 <?php
 require_once 'AbstractUser.php';
 require_once 'Matchs.php';
+require_once 'Category.php';
 
 class organizer extends AbstractUser{
    public function __construct($id = null) {
@@ -46,7 +47,20 @@ class organizer extends AbstractUser{
 
    
 
+public function addCategoryToMatch($matchId, $nom, $prix)
+{
+    // Optionnel : vérification que le match appartient bien à cet organisateur
+    $stmt = $this->db->prepare("SELECT organizer_id FROM matchs WHERE id = ?");
+    $stmt->execute([$matchId]);
+    $match = $stmt->fetch();
 
+    if (!$match || $match['organizer_id'] != $this->getId()) {
+        throw new Exception("Match non autorisé");
+    }
+
+    $category = new Category();
+    return $category->create($matchId, $nom, $prix);
+}
 
 
 

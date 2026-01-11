@@ -25,9 +25,22 @@ class AuthController {
                     $loginResult = $user->login($email, $password);
                     
                     if ($loginResult === true) {
-                        // Login successful - redirect to success page
-                        header("Location: ?route=auth&action=success");
-                        exit();
+                        // Login successful - check role and redirect accordingly
+                        $role = $_SESSION['user_role'] ?? 'user';
+                        
+                        // Redirect directly to appropriate dashboard based on role
+                        switch($role) {
+                            case 'admin':
+                                header("Location: ?route=admin&action=dashboard");
+                                exit();
+                            case 'organizer':
+                                header("Location: ?route=organizer&action=dashboard");
+                                exit();
+                            case 'user':
+                            default:
+                                header("Location: ?route=auth&action=success");
+                                exit();
+                        }
                     } else {
                         $errors[] = "Email ou mot de passe incorrect.";
                     }
@@ -51,6 +64,7 @@ class AuthController {
             $prenom = trim($_POST['prenom'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
+            $role = $_POST['role'] ?? 'user';
 
             // Validation
             if (empty($nom)) {
@@ -65,11 +79,13 @@ class AuthController {
                 $errors[] = "Format d'email invalide.";
             } elseif (strlen($password) < 6) {
                 $errors[] = "Le mot de passe doit contenir au moins 6 caractères.";
+            } elseif (!in_array($role, ['user', 'organizer'])) {
+                $errors[] = "Type de compte invalide.";
             } else {
                 // Try to register
                 try {
                     $user = new User();
-                    $registerResult = $user->register($email, $password, $nom, $prenom, 'user');
+                    $registerResult = $user->register($email, $password, $nom, $prenom, $role);
                     
                     if ($registerResult === true) {
                         // Registration successful - redirect to login
@@ -105,7 +121,7 @@ class AuthController {
             $dashboardUrl = '?route=organizer&action=dashboard';
         }
         
-        // Display success page
+        // Display success page with role-specific message
         require_once __DIR__ . '/../public/views/auth/success.php';
     }
 

@@ -133,6 +133,18 @@
                 <small style="color: #666; font-size: 12px;">Minimum 6 caractères</small>
             </div>
 
+            <div class="form-group">
+                <label for="role">Type de compte :</label>
+                <select id="role" name="role" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;">
+                    <option value="user" <?= (isset($_POST['role']) && $_POST['role'] === 'user') ? 'selected' : 'selected' ?>>Utilisateur (Acheteur)</option>
+                    <option value="organizer" <?= (isset($_POST['role']) && $_POST['role'] === 'organizer') ? 'selected' : '' ?>>Organisateur</option>
+                </select>
+                <small style="color: #666; font-size: 12px;">
+                    <strong>Utilisateur:</strong> Pour acheter des billets et donner des avis<br>
+                    <strong>Organisateur:</strong> Pour créer et gérer des matchs
+                </small>
+            </div>
+
             <button type="submit">S'inscrire</button>
         </form>
 

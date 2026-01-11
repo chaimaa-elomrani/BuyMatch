@@ -124,6 +124,18 @@
         <p class="user-name">
             <?= htmlspecialchars(trim(($_SESSION['user_prenom'] ?? '') . ' ' . ($_SESSION['user_nom'] ?? ''))) ?>
         </p>
+        <?php 
+        $role = $_SESSION['user_role'] ?? 'user';
+        $roleText = '';
+        if ($role === 'organizer') {
+            $roleText = 'Organisateur';
+        } elseif ($role === 'admin') {
+            $roleText = 'Administrateur';
+        } else {
+            $roleText = 'Utilisateur';
+        }
+        ?>
+        <p style="color: #888; font-size: 14px; margin-bottom: 20px;">Compte: <?= htmlspecialchars($roleText) ?></p>
         <p class="redirect-text">
             Redirection vers votre tableau de bord dans 
             <span class="countdown" id="countdown">3</span> secondes...

@@ -1,113 +1,167 @@
 <?php
-require_once 'C:\laragon\www\BuyMatch\config\conx.php';
-abstract class AbstractUser {
+// models/AbstractUser.php - Classe abstraite pour tous les utilisateurs
+require_once __DIR__ . '/../config/conx.php';
 
+abstract class AbstractUser {
     protected $id;
+    protected $email;
+    protected $password;
     protected $nom;
     protected $prenom;
-    protected $password;
-    protected $email;
-    protected $role ;
-    protected $status;
+    protected $telephone;
+    protected $role;
+    protected $isActive;
+    protected $createdAt;
+    
     protected $db;
-
-
-    public function __construct(
-        ?int $id = null,
-        ?string $nom = null,
-        ?string $prenom = null,
-        ?string $email = null,
-        ?string $password = null,
-        string $role = 'user',
-        string $status = 'active'
-    ) {
+    
+    public function __construct() {
         $this->db = Database::getInstance()->getConnection();
-
-        $this->id       = $id;
-        $this->nom      = $nom ?? '';
-        $this->prenom   = $prenom ?? '';
-        $this->email    = $email ?? '';
-        $this->role     = $role;
-        $this->status   = $status;
-
-        // Si mot de passe fourni, on le hash immédiatement (utile pour register)
-        if ($password !== null && $password !== '') {
-            $this->password = password_hash($password, PASSWORD_DEFAULT);
-        }
     }
-
-    public function getId(){
+    
+    // Getters
+    public function getId() {
         return $this->id;
     }
     
-    public function getFullname(){
-        return trim($this->nom . ' ' . $this->prenom);
-    }
-
-    public function getEmail(){
+    public function getEmail() {
         return $this->email;
     }
-    public function getRole(){
+    
+    public function getNom() {
+        return $this->nom;
+    }
+    
+    public function getPrenom() {
+        return $this->prenom;
+    }
+    
+    public function getTelephone() {
+        return $this->telephone;
+    }
+    
+    public function getRole() {
         return $this->role;
     }
-
-    public function setNom($nom){
-        $this->nom = $nom;
+    
+    public function getIsActive() {
+        return $this->isActive;
     }
-    public function setPrenom($prenom){
-        $this->prenom = $prenom;
+    
+    public function getFullname() {
+        return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
     }
-  
-    public function setEmail($email){
-        $this->email = $email;
+    
+    // Setters
+    public function setEmail($email) {
+        $this->email = filter_var($email, FILTER_SANITIZE_EMAIL);
     }
-
-    public function setPassword($password){
+    
+    public function setPassword($password) {
         $this->password = password_hash($password, PASSWORD_DEFAULT);
     }
     
-    public function setRole($role){
-        $this->role = $role;
+    public function setNom($nom) {
+        $this->nom = htmlspecialchars($nom, ENT_QUOTES, 'UTF-8');
     }
-
     
-    abstract public function register();
-    public function login($email, $password){
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email");
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-        $user = $stmt->fetch();
-
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_fullname'] = $user['nom'] . ' ' . $user['prenom'];
-            $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_role'] = $user['role']; 
-            return true;
+    public function setPrenom($prenom) {
+        $this->prenom = htmlspecialchars($prenom, ENT_QUOTES, 'UTF-8');
+    }
+    
+    public function setTelephone($telephone) {
+        $this->telephone = htmlspecialchars($telephone, ENT_QUOTES, 'UTF-8');
+    }
+    
+    public function setIsActive($isActive) {
+        $this->isActive = (bool)$isActive;
+    }
+    
+    // Méthode concrète commune pour login
+    public function login($email, $password) {
+        // Trim and normalize email for comparison
+        $email = trim(strtolower($email));
+        
+        if (empty($email) || empty($password)) {
+            return false;
         }
+        
+        try {
+            // Use LOWER() in SQL for case-insensitive email comparison
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user && password_verify($password, $user['password'])) {
+                // Check if user is active (if is_active column exists)
+                if (isset($user['is_active']) && $user['is_active'] == 0) {
+                    return false;
+                }
+                
+                // Set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['user_nom'] = $user['nom'] ?? '';
+                $_SESSION['user_prenom'] = $user['prenom'] ?? '';
+                $_SESSION['user_email'] = $user['email'];
+                
+                // Load user data into object
+                $this->id = $user['id'];
+                $this->email = $user['email'];
+                $this->nom = $user['nom'] ?? '';
+                $this->prenom = $user['prenom'] ?? '';
+                $this->role = $user['role'];
+                $this->isActive = $user['is_active'] ?? 1;
+                
+                return true;
+            }
+        } catch (PDOException $e) {
+            error_log("Login error: " . $e->getMessage());
+            return false;
+        }
+        
         return false;
-
     }
-
-
-  protected function loadById($id){
-    $stmt = $this->db->prepare("SELECT id, nom, prenom, email, role, password FROM users WHERE id = :id");
-    $stmt->bindParam(':id', $id);
-    $stmt->execute();
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user) {
-        $this->id = $user['id'];
-        $this->nom = $user['nom'];
-        $this->prenom = $user['prenom'];
-        $this->email = $user['email'];
-        $this->role = $user['role'];
-        $this->password = $user['password']; // optionnel
-        return true;
+    
+    // Méthode pour mettre à jour le profil
+    public function updateProfile($data) {
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET nom = ?, prenom = ?, telephone = ? 
+            WHERE id = ?
+        ");
+        
+        return $stmt->execute([
+            $data['nom'],
+            $data['prenom'],
+            $data['telephone'],
+            $this->id
+        ]);
     }
-    return false;
-}
     
-    
-
+    // Charger les données d'un utilisateur par ID
+    public function loadById($id) {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($data) {
+                $this->id = $data['id'];
+                $this->email = $data['email'];
+                $this->nom = $data['nom'] ?? '';
+                $this->prenom = $data['prenom'] ?? '';
+                $this->telephone = $data['telephone'] ?? '';
+                $this->role = $data['role'] ?? 'user';
+                $this->isActive = $data['is_active'] ?? 1;
+                $this->createdAt = $data['created_at'] ?? null;
+                return true;
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("loadById error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

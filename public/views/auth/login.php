@@ -1,84 +1,144 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once __DIR__ . '/../../../models/AbstractUser.php';
-require_once __DIR__ . '/../../../models/User.php';
-
-$errors = [];
-$successMessage = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    if (empty($email) || empty($password)) {
-        $errors[] = "Email et mot de passe requis.";
-    } else {
-        $user = new User();
-        if ($user->login($email, $password)) {
-            $successMessage = "✓ Connexion réussie ! Redirection en cours...";
-            $role = $_SESSION['user_role'] ?? 'user';
-            $base = '../../';
-            switch ($role) {
-                case 'admin':
-                    header("Location: {$base}?route=dashboard&section=admin");
-                    break;
-                case 'organizer':
-                    header("Location: {$base}?route=dashboard&section=organizer");
-                    break;
-                default:
-                    header("Location: {$base}?route=dashboard&section=user");
-                    break;
-            }
-            exit;
-        } else {
-            $errors[] = "Email ou mot de passe incorrect.";
-        }
-    }
-}
-?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - BuyMatch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .error-box {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+        .error-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .success-box {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Se connecter</h1>
+    <div class="container">
+        <h1>Connexion</h1>
 
-    <?php if ($successMessage): ?>
-        <div style="color:green; font-size:1.4em; font-weight:bold; margin:20px 0; padding:15px; border:2px solid green; background:#e6ffe6;">
-            <?= $successMessage ?>
+        <?php if (isset($_GET['registered']) && $_GET['registered'] == 1): ?>
+            <div class="success-box">
+                Inscription réussie ! Vous pouvez maintenant vous connecter.
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($errors)): ?>
+            <div class="error-box">
+                <ul>
+                    <?php foreach ($errors as $error): ?>
+                        <li><?= htmlspecialchars($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="?route=auth&action=login">
+            <div class="form-group">
+                <label for="email">Email :</label>
+                <input type="email" id="email" name="email" required 
+                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe :</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit">Se connecter</button>
+        </form>
+
+        <div class="register-link">
+            <p>Pas de compte ? <a href="?route=auth&action=register">S'inscrire</a></p>
         </div>
-    <?php endif; ?>
-
-    <?php if (!empty($errors)): ?>
-        <div style="color:red; margin:15px 0; padding:10px; border:1px solid red;">
-            <ul>
-                <?php foreach ($errors as $err): ?>
-                    <li><?= htmlspecialchars($err) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST">
-        <div style="margin-bottom:15px;">
-            <label>Email :</label><br>
-            <input type="email" name="email" required style="width:320px;padding:10px;">
-        </div>
-
-        <div style="margin-bottom:20px;">
-            <label>Mot de passe :</label><br>
-            <input type="password" name="password" required style="width:320px;padding:10px;">
-        </div>
-
-        <button type="submit" style="padding:12px 25px; font-size:1.1em;">Se connecter</button>
-    </form>
-
-    <p style="margin-top:25px;">Pas de compte ? <a href="?route=register">S'inscrire</a></p>
+    </div>
 </body>
 </html>

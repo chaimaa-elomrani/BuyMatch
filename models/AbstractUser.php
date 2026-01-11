@@ -93,8 +93,8 @@ abstract class AbstractUser {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user && password_verify($password, $user['password'])) {
-                // Check if user is active (if is_active column exists)
-                if (isset($user['is_active']) && $user['is_active'] == 0) {
+                // Check if user is active (check status field)
+                if (isset($user['status']) && $user['status'] === 'inactive') {
                     return false;
                 }
                 
@@ -111,7 +111,7 @@ abstract class AbstractUser {
                 $this->nom = $user['nom'] ?? '';
                 $this->prenom = $user['prenom'] ?? '';
                 $this->role = $user['role'];
-                $this->isActive = $user['is_active'] ?? 1;
+                $this->isActive = (isset($user['status']) && $user['status'] === 'active') ? 1 : 0;
                 
                 return true;
             }
@@ -153,7 +153,7 @@ abstract class AbstractUser {
                 $this->prenom = $data['prenom'] ?? '';
                 $this->telephone = $data['telephone'] ?? '';
                 $this->role = $data['role'] ?? 'user';
-                $this->isActive = $data['is_active'] ?? 1;
+                $this->isActive = (isset($data['status']) && $data['status'] === 'active') ? 1 : 0;
                 $this->createdAt = $data['created_at'] ?? null;
                 return true;
             }

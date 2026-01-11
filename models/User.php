@@ -151,19 +151,87 @@ class User extends AbstractUser {
         }
         
         try {
-            $stmt = $this->db->prepare("
-                SELECT r.*, m.lieu, m.date_match, e.nom AS equipe_nom 
-                FROM reviews r 
-                JOIN matchs m ON r.match_id = m.id 
-                JOIN equipes e ON m.equipe = e.id 
-                WHERE r.user_id = ? 
-                ORDER BY m.date_match DESC
-            ");
-
-            $stmt->execute([$this->id]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $review = new Review();
+            return $review->getByUser($this->id);
         } catch (PDOException $e) {
             error_log("getHistory error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function updateProfile($data){
+        if (!$this->id) {
+            throw new Exception("User not logged in.");
+        }
+        
+        $nom = $data['nom'] ?? $this->nom;
+        $prenom = $data['prenom'] ?? $this->prenom;
+        $telephone = $data['telephone'] ?? $this->telephone;
+        
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE users 
+                SET nom = ?, prenom = ?, telephone = ? 
+                WHERE id = ?
+            ");
+            
+            $result = $stmt->execute([$nom, $prenom, $telephone, $this->id]);
+            
+            if ($result) {
+                $this->nom = $nom;
+                $this->prenom = $prenom;
+                $this->telephone = $telephone;
+                return true;
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("updateProfile error: " . $e->getMessage());
+            throw new Exception("Erreur lors de la mise à jour du profil.");
+        }
+    }
+    
+    public function updateProfileSimple($nom, $prenom, $telephone = null){
+        return $this->updateProfile(['nom' => $nom, 'prenom' => $prenom, 'telephone' => $telephone]);
+    }
+
+    public function getAvailableSeats($matchId, $categoryId){
+        if (!$this->id) {
+            return [];
+        }
+        
+        try {
+            // Get match capacity
+            $stmt = $this->db->prepare("SELECT capacity FROM matchs WHERE id = ?");
+            $stmt->execute([$matchId]);
+            $match = $stmt->fetch();
+            
+            if (!$match) {
+                return [];
+            }
+            
+            $capacity = $match['capacity'];
+            
+            // Get taken seats for this match and category
+            $stmt = $this->db->prepare("
+                SELECT place_number 
+                FROM tickets 
+                WHERE match_id = ? AND category_id = ?
+            ");
+            $stmt->execute([$matchId, $categoryId]);
+            $takenSeats = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Generate all possible seats (simple numbering: 1, 2, 3, ...)
+            $allSeats = [];
+            for ($i = 1; $i <= $capacity; $i++) {
+                $allSeats[] = (string)$i;
+            }
+            
+            // Return available seats
+            $availableSeats = array_diff($allSeats, $takenSeats);
+            return array_values($availableSeats);
+        } catch (PDOException $e) {
+            error_log("getAvailableSeats error: " . $e->getMessage());
             return [];
         }
     }

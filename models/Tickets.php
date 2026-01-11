@@ -95,25 +95,58 @@ class Tickets
         return $data;
     }
 
-    public function generatePDF()
+    public function generatePDF($ticketId = null)
     {
-        // Implement PDF generation logic here using a library like TCPDF or FPDF
-        require_once BASE_PATH . '/vendor/autoload.php';
-
-        $data = $this->loadById($this->id);
+        $ticketId = $ticketId ?? $this->id;
+        if (!$ticketId) {
+            throw new Exception("Ticket ID is required.");
+        }
+        
+        $data = $this->loadById($ticketId);
         if (!$data) {
             throw new Exception("Ticket not found.");
         }
+        
+        $this->id = $ticketId;
+        $this->matchData = $data;
+
         $dompdf = new Dompdf();
         $html = "
-    <h2>{$this->matchData['team1_name']} vs {$this->matchData['team2_name']}</h2>
-    <p><strong>Date:</strong> " . date('d/m/Y H:i', strtotime($this->matchData['date_match'])) . "</p>
-    <p><strong>Lieu:</strong> {$this->matchData['lieu']}</p>
-    <p><strong>Catégorie:</strong> {$this->matchData['category_name']}</p>
-    <p><strong>Prix:</strong> {$this->matchData['prix']} DH</p>
-    <p><strong>Place:</strong> {$this->place_number}</p>
-    <p><strong>QR Code:</strong> {$this->qr_code}</p>
-";
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                .ticket { border: 2px solid #667eea; padding: 20px; max-width: 600px; margin: 0 auto; }
+                .header { text-align: center; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 20px; }
+                .match-info { margin: 15px 0; }
+                .info-row { margin: 10px 0; }
+                .label { font-weight: bold; color: #333; }
+                .qr-code { text-align: center; margin-top: 20px; font-family: monospace; font-size: 18px; padding: 10px; background: #f5f5f5; }
+            </style>
+        </head>
+        <body>
+            <div class='ticket'>
+                <div class='header'>
+                    <h1>BuyMatch - Billet</h1>
+                </div>
+                <div class='match-info'>
+                    <h2>{$data['team1_name']} vs {$data['team2_name']}</h2>
+                    <div class='info-row'><span class='label'>Date:</span> " . date('d/m/Y à H:i', strtotime($data['date_match'])) . "</div>
+                    <div class='info-row'><span class='label'>Lieu:</span> {$data['lieu']}</div>
+                    <div class='info-row'><span class='label'>Catégorie:</span> {$data['category_name']}</div>
+                    <div class='info-row'><span class='label'>Prix:</span> {$data['prix']} DH</div>
+                    <div class='info-row'><span class='label'>Place:</span> {$data['place_number']}</div>
+                    <div class='info-row'><span class='label'>Acheteur:</span> {$data['user_prenom']} {$data['user_nom']}</div>
+                </div>
+                <div class='qr-code'>
+                    <div>QR Code:</div>
+                    <div style='font-size: 24px; margin-top: 10px;'>{$data['qr_code']}</div>
+                </div>
+            </div>
+        </body>
+        </html>";
 
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
@@ -137,37 +170,38 @@ class Tickets
         }
 
         // Utilisation de PHPMailer
-        require_once BASE_PATH . '/vendor/autoload.php';
-
         $mail = new PHPMailer(true);
 
         try {
+            // SMTP Configuration (you can move this to config file)
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'votre-email@gmail.com';
-            $mail->Password = 'votre-mot-de-passe';
+            $mail->Username = 'your-email@gmail.com'; // Change this
+            $mail->Password = 'your-app-password'; // Change this (use app password for Gmail)
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
+            $mail->CharSet = 'UTF-8';
 
             // Destinataire
-            $mail->setFrom('noreply@billetterie.com', 'Billetterie Sportive');
-            $mail->addAddress($data['user_email'] ?? '', trim(($data['user_nom'] ?? '') . ' ' . ($data['user_prenom'] ?? '')));
+            $mail->setFrom('noreply@buymatch.com', 'BuyMatch');
+            $mail->addAddress($data['user_email'], trim($data['user_prenom'] . ' ' . $data['user_nom']));
 
             // Contenu
             $mail->isHTML(true);
-            $mail->Subject = 'Votre billet pour ' . ($data['home_team'] ?? '') . ' vs ' . ($data['away_team'] ?? '');
+            $mail->Subject = 'Votre billet pour ' . $data['team1_name'] . ' vs ' . $data['team2_name'];
             $mail->Body = "
                 <h2>Merci pour votre achat !</h2>
-                <p>Votre billet pour le match " . ($data['home_team'] ?? '') . " vs " . ($data['away_team'] ?? '') . " est prêt.</p>
-                <p><strong>Date:</strong> " . date('d/m/Y H:i', strtotime($data['date_match'])) . "</p>
-                <p><strong>Place:</strong> " . htmlspecialchars($data['place_number'] ?? '') . "</p>
+                <p>Votre billet pour le match <strong>{$data['team1_name']} vs {$data['team2_name']}</strong> est prêt.</p>
+                <p><strong>Date:</strong> " . date('d/m/Y à H:i', strtotime($data['date_match'])) . "</p>
+                <p><strong>Lieu:</strong> {$data['lieu']}</p>
+                <p><strong>Place:</strong> {$data['place_number']}</p>
+                <p><strong>Catégorie:</strong> {$data['category_name']}</p>
                 <p>Veuillez trouver votre billet en pièce jointe.</p>
             ";
 
-
             $pdfContent = $this->generatePDF();
-            $mail->addStringAttachment($pdfContent, 'billet.pdf');
+            $mail->addStringAttachment($pdfContent, 'billet-' . $this->id . '.pdf', 'base64', 'application/pdf');
 
             $mail->send();
             return true;

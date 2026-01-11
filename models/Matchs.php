@@ -67,4 +67,50 @@ class Matchs{
         $stmt->execute([$organizerId]);
         return $stmt->fetchAll();
     }
+
+    public function getPublishedMatches(){
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    m.*,
+                    t1.nom AS team1_name,
+                    t1.logo AS team1_logo,
+                    t2.nom AS team2_name,
+                    t2.logo AS team2_logo
+                FROM matchs m
+                JOIN equipes t1 ON m.team1_id = t1.id
+                JOIN equipes t2 ON m.team2_id = t2.id
+                WHERE m.statut = 'published'
+                AND m.date_match >= NOW()
+                ORDER BY m.date_match ASC
+            ");
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getPublishedMatches error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getPublishedMatchById($matchId){
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    m.*,
+                    t1.nom AS team1_name,
+                    t1.logo AS team1_logo,
+                    t2.nom AS team2_name,
+                    t2.logo AS team2_logo
+                FROM matchs m
+                JOIN equipes t1 ON m.team1_id = t1.id
+                JOIN equipes t2 ON m.team2_id = t2.id
+                WHERE m.id = ? AND m.statut = 'published'
+            ");
+            $stmt->execute([$matchId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getPublishedMatchById error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

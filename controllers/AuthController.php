@@ -123,8 +123,8 @@ class AuthController {
         
         session_destroy();
         
-        // Redirect to login
-        header("Location: ?route=auth&action=login");
+        // Redirect to matches page (public home)
+        header("Location: ?route=match&action=index");
         exit();
     }
 }

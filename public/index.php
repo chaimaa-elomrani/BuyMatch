@@ -11,6 +11,28 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $route = $_GET['route'] ?? 'home';
 $action = $_GET['action'] ?? 'index';
 
+// Define public routes (accessible without login)
+$publicRoutes = ['match', 'auth'];
+$publicAuthActions = ['login', 'register', 'success', 'logout'];
+
+// Check if route requires authentication
+$requiresAuth = !in_array($route, $publicRoutes);
+
+// If route requires auth but user is not logged in, redirect to login
+if ($requiresAuth && !isset($_SESSION['user_id'])) {
+    header("Location: ?route=auth&action=login");
+    exit();
+}
+
+// For auth route, check if action is public
+if ($route === 'auth' && !in_array($action, $publicAuthActions)) {
+    // Only allow public auth actions for visitors
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: ?route=auth&action=login");
+        exit();
+    }
+}
+
 // Simple router
 try {
     switch ($route) {
@@ -20,45 +42,67 @@ try {
             if (method_exists($controller, $action)) {
                 $controller->$action();
             } else {
-                die("Error: Action '$action' not found in AuthController");
+                header("Location: ?route=match&action=index");
+                exit();
             }
             break;
             
         case 'user':
+            // Protected route - already checked above
             require_once __DIR__ . '/../controllers/UserController.php';
             $controller = new UserController();
             if (method_exists($controller, $action)) {
                 $controller->$action();
             } else {
-                die("Error: Action '$action' not found in UserController");
+                header("Location: ?route=match&action=index");
+                exit();
             }
             break;
 
         case 'organizer':
+            // Protected route - already checked above
             require_once __DIR__ . '/../controllers/OrganizerController.php';
             $controller = new OrganizerController();
             if (method_exists($controller, $action)) {
                 $controller->$action();
             } else {
-                die("Error: Action '$action' not found in OrganizerController");
+                header("Location: ?route=match&action=index");
+                exit();
             }
             break;
 
         case 'admin':
+            // Protected route - already checked above
             require_once __DIR__ . '/../controllers/AdminController.php';
             $controller = new AdminController();
             if (method_exists($controller, $action)) {
                 $controller->$action();
             } else {
-                die("Error: Action '$action' not found in AdminController");
+                header("Location: ?route=match&action=index");
+                exit();
+            }
+            break;
+
+        case 'match':
+            // Public route - visitors can access
+            require_once __DIR__ . '/../controllers/MatchController.php';
+            $controller = new MatchController();
+            if (method_exists($controller, $action)) {
+                $controller->$action();
+            } else {
+                header("Location: ?route=match&action=index");
+                exit();
             }
             break;
         
         default:
-            echo "<h1>Bienvenue sur BuyMatch</h1>";
-            echo "<p><a href='?route=auth&action=login'>Se connecter</a> | <a href='?route=auth&action=register'>S'inscrire</a></p>";
+            // Redirect to matches page as home
+            header("Location: ?route=match&action=index");
+            exit();
             break;
     }
 } catch (Exception $e) {
-    die("Error: " . htmlspecialchars($e->getMessage()));
+    error_log("Router error: " . $e->getMessage());
+    header("Location: ?route=match&action=index");
+    exit();
 }
